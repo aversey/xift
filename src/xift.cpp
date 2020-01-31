@@ -4,15 +4,15 @@
 #include <ctype.h>
 
 
-const char *XiftErrorMessage(XiftError error)
+const char *xift_error_message(XiftError error)
 {
     switch (error) {
-    case xift_ok:                    return "";
     case xift_wrong_char:            return "Wrong character in tag.";
     case xift_attr_sep:              return "Attribute separator missed.";
     case xift_something_after_close: return "Met something after tag close.";
     case xift_close_selfclose:       return "Tag is closing and self-closing.";
     case xift_unwanted_close:        return "Closing not opened tag.";
+    default:                         return "";
     }
 }
 
@@ -101,7 +101,7 @@ void Xift::ReadText(char c)
 
 void Xift::OpenTag(char c)
 {
-    Item &t = opened.New();
+    XiftTag &t = opened.New();
     if (c == '/') {
         is_closing = true;
         state      = reading_name;
@@ -117,7 +117,7 @@ void Xift::OpenTag(char c)
 void Xift::ReadName(char c)
 {
     if (AllowedInToken(c)) {
-        Item &t = *opened.Top();
+        XiftTag &t = *opened.Top();
         xift_str_add(t.name, t.len, t.size, c);
     } else if (IsWhitespace(c)) {
         state = waiting_attr;
@@ -133,7 +133,7 @@ void Xift::ReadName(char c)
 void Xift::WaitAttr(char c)
 {
     if (AllowedInTokenStart(c)) {
-        Item::Attr &a = opened.Top()->New();
+        XiftAttribute &a = opened.Top()->New();
         xift_str_add(a.name, a.nlen, a.nsize, c);
         state = reading_attr_name;
     } else if (c == '/') {
@@ -151,13 +151,13 @@ void Xift::WaitAttr(char c)
 void Xift::ReadAttrName(char c)
 {
     if (AllowedInToken(c)) {
-        Item::Attr &a = *opened.Top()->Top();
+        XiftAttribute &a = *opened.Top()->Top();
         xift_str_add(a.name, a.nlen, a.nsize, c);
     } else if (c == '=') {
         state = waiting_attr_value;
     } else if (c == '>') {
-        Item::Attr &a  = *opened.Top()->Top();
-        a.value       = xift_str_create_copy(a.name, a.name + a.len);
+        XiftAttribute &a  = *opened.Top()->Top();
+        a.value       = xift_str_create_copy(a.name, a.name + a.nlen);
         a.vlen        = a.nlen;
         a.vsize       = a.vlen + 1;
         a.value_quota = '\'';
@@ -176,20 +176,20 @@ void Xift::WaitAttrSep(char c)
     if (c == '=') {
         state = waiting_attr_value;
     } else if (c == '>') {
-        Item::Attr &a  = *opened.Top()->Top();
-        a.value       = xift_str_create_copy(a.name, a.name + a.len);
+        XiftAttribute &a  = *opened.Top()->Top();
+        a.value       = xift_str_create_copy(a.name, a.name + a.nlen);
         a.vlen        = a.nlen;
         a.vsize       = a.vlen + 1;
         a.value_quota = '\'';
         CompleteCurrent();
         state = reading_text;
     } else if (AllowedInTokenStart(c)) {
-        Item::Attr &a  = *opened.Top()->Top();
-        a.value       = xift_str_create_copy(a.name, a.name + a.len);
+        XiftAttribute &a  = *opened.Top()->Top();
+        a.value       = xift_str_create_copy(a.name, a.name + a.nlen);
         a.vlen        = a.nlen;
         a.vsize       = a.vlen + 1;
         a.value_quota = '\'';
-        Item::Attr &n  = opened.Top()->New();
+        XiftAttribute &n  = opened.Top()->New();
         xift_str_add(n.name, n.nlen, n.nsize, c);
         state = reading_attr_name;
     } else if (!IsWhitespace(c)) {
@@ -205,7 +205,7 @@ void Xift::WaitAttrValue(char c)
         value_quota                      = c;
         state                            = reading_attr_value;
     } else if (AllowedInTokenStart(c)) {
-        Item::Attr &a  = *opened.Top()->Top();
+        XiftAttribute &a  = *opened.Top()->Top();
         a.value_quota = '\'';
         xift_str_add(a.value, a.vlen, a.vsize, c);
         value_quota = 0;
@@ -222,7 +222,7 @@ void Xift::ReadAttrValue(char c)
         if (c == value_quota) {
             state = waiting_attr;
         } else {
-            Item::Attr &a = *opened.Top()->Top();
+            XiftAttribute &a = *opened.Top()->Top();
             xift_str_add(a.value, a.vlen, a.vsize, c);
         }
     } else {
@@ -231,7 +231,7 @@ void Xift::ReadAttrValue(char c)
             state = reading_text;
         }
         if (AllowedInToken(c)) {
-            Item::Attr &a = *opened.Top()->Top();
+            XiftAttribute &a = *opened.Top()->Top();
             xift_str_add(a.value, a.vlen, a.vsize, c);
         } else if (IsWhitespace(c)) {
             state = waiting_attr;
@@ -249,7 +249,7 @@ void Xift::CloseTag(char c)
         state = reading_text;
     } else if (!IsWhitespace(c)) {
         state = state_error;
-        error = something_after_close;
+        error = xift_something_after_close;
     }
 }
 
@@ -297,7 +297,7 @@ void Xift::CloseTop()
     opened.Pop();
 }
 
-void Xift::CloseName(const ScriptVariable &name)
+void Xift::CloseName(const char *name)
 {
     exporter.Put("</");
     exporter.Put(name);
@@ -306,11 +306,11 @@ void Xift::CloseName(const ScriptVariable &name)
 
 void Xift::SelfcloseCurrent()
 {
-    Item &t = *opened.Top();
+    XiftTag &t = *opened.Top();
     exporter.Put('<');
     exporter.Put(t.name);
-    Item::Attr *a;
-    while (a = t.Top()) {
+    XiftAttribute *a;
+    for (a = t.Top(); a; a = t.Top()) {
         exporter.Put(' ');
         exporter.Put(a->name);
         exporter.Put('=');
@@ -325,11 +325,11 @@ void Xift::SelfcloseCurrent()
 
 void Xift::PutCurrent()
 {
-    Item &t = *opened.Top();
+    XiftTag &t = *opened.Top();
     exporter.Put('<');
     exporter.Put(t.name);
-    Item::Attr *a;
-    while (a = t.Top()) {
+    XiftAttribute *a;
+    for (a = t.Top(); a; a = t.Top()) {
         exporter.Put(' ');
         exporter.Put(a->name);
         exporter.Put('=');

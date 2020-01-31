@@ -4,39 +4,36 @@
 #include "attribute.hpp"
 
 
+struct XiftTag: public XiftAttributes {
+    XiftTag();
+    ~XiftTag();
+
+    bool MatchesForm(const XiftTag & form) const;
+
+    char *name;
+    int   len;
+    int   size;
+};
+
 class XiftTags {
 public:
-    class Item: public XiftAttributes {
-        friend class XiftTags;
-
-        Item();
-        ~Item();
-
-        bool MatchesForm(const Item & form) const;
-
-        char *name;
-        int   len;
-        int   size;
-    };
-
     XiftTags();
     ~XiftTags();
 
-    Item &Tag(const char *name);
-    void  Remove(const char *name);
+    XiftTag &Tag(const char *name);
+    void     Remove(const char *name);
 
-protected:
-    Item *Top();
-    void  Pop();
-    Item *PopToBeDeleted();
-    Item &New();
+    XiftTag *Top();
+    void     Pop();
+    XiftTag *PopToBeDeleted();
+    XiftTag &New();
 
-    bool ContainsMatchedForm(const Item &tag) const;
+    bool ContainsMatchedForm(const XiftTag &tag) const;
 
 private:
     struct Stack {
-        Stack *next;
-        Item   *item;
+        Stack   *next;
+        XiftTag *item;
     } *stack;
 };
 

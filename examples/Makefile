@@ -12,9 +12,9 @@ CPPFLAGS += -O3
 endif
 
 INCLUDE   = -I../src
-LFLAGS    = -L.. -lxenophage
+LFLAGS    = -L.. -lxift
 
-XENOPHAGE = ../libxenophage.a
+XENOPHAGE = ../libxift.a
 
 
 default: $(EXAMPLES)

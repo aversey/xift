@@ -15,7 +15,7 @@ enum XiftError {
     xift_unwanted_close
 };
 
-const char *XiftErrorMessage(XiftError error);
+const char *xift_error_message(XiftError error);
 
 
 class Xift: public XiftTags {

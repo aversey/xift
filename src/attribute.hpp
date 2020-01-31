@@ -2,44 +2,41 @@
 #define XIFT_INCLUDED_ATTRIBUTE
 
 
+struct XiftAttribute {
+    XiftAttribute();
+    ~XiftAttribute();
+
+    bool MatchesForm(const XiftAttribute &form) const;
+
+    char *name;
+    int   nlen;
+    int   nsize;
+    char *value;
+    int   vlen;
+    int   vsize;
+
+    char value_quota;
+};
+
 class XiftAttributes {
 public:
-    class Attr {
-        friend class XiftAttributes;
-
-        Attr();
-        ~Attr();
-
-        bool MatchesForm(const Attr &form) const;
-
-        char *name;
-        int   nlen;
-        int   nsize;
-        char *value;
-        int   vlen;
-        int   vsize;
-
-        char value_quota;
-    };
-
     XiftAttributes();
     ~XiftAttributes();
 
-    Attr &Attribute(const char *name);
-    void  Remove(const char *name);
+    XiftAttribute &Attribute(const char *name);
+    void           Remove(const char *name);
 
-protected:
-    Attr *Top();
-    void  Pop();
-    Attr &New();
+    XiftAttribute *Top();
+    void           Pop();
+    XiftAttribute &New();
 
-    bool ContainsMatchedForm(const Attr &attribute) const;
+    bool ContainsMatchedForm(const XiftAttribute &attribute) const;
     bool MatchesForm(const XiftAttributes &form) const;
 
 private:
     struct Stack {
-        Stack *next;
-        Attr   item;
+        Stack        *next;
+        XiftAttribute item;
     } *stack;
 };
 

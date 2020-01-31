@@ -5,16 +5,16 @@
 #include <string.h>
 
 
-XiftTags::Item::Item(): name(0), len(0), size(0)
+XiftTag::XiftTag(): name(0), len(0), size(0)
 {}
 
-XiftTags::Item::~Item()
+XiftTag::~XiftTag()
 {
     if (name) free(name);
 }
 
 
-bool XiftTags::Item::MatchesForm(const XiftTags::Item &form) const
+bool XiftTag::MatchesForm(const XiftTag &form) const
 {
     return !strcmp(name, form.name) && XiftAttributes::MatchesForm(form);
 }
@@ -34,7 +34,7 @@ XiftTags::~XiftTags()
 }
 
 
-XiftTags::Item &XiftTags::Tag(const char *name)
+XiftTag &XiftTags::Tag(const char *name)
 {
     Stack *current = stack;
     while (current) {
@@ -43,7 +43,7 @@ XiftTags::Item &XiftTags::Tag(const char *name)
         }
         current = current->next;
     }
-    Item &res = New();
+    XiftTag &res = New();
     res.len  = strlen(name);
     res.name = xift_str_create_copy(name, name + res.len);
     res.size = res.len + 1;
@@ -66,7 +66,7 @@ void XiftTags::Remove(const char *name)
 }
 
 
-XiftTags::Item *XiftTags::Top()
+XiftTag *XiftTags::Top()
 {
     if (stack) {
         return stack->item;
@@ -85,9 +85,9 @@ void XiftTags::Pop()
     }
 }
 
-XiftTags::Item *XiftTags::PopToBeDeleted()
+XiftTag *XiftTags::PopToBeDeleted()
 {
-    XiftTags::Item *res = 0;
+    XiftTag *res = 0;
     if (stack) {
         Stack *old = stack;
         res        = stack->item;
@@ -97,17 +97,17 @@ XiftTags::Item *XiftTags::PopToBeDeleted()
     return res;
 }
 
-XiftTags::Item &XiftTags::New()
+XiftTag &XiftTags::New()
 {
     Stack *old  = stack;
     stack       = new Stack;
-    stack->item = new XiftTags::Item;
+    stack->item = new XiftTag;
     stack->next = old;
     return *stack->item;
 }
 
 
-bool XiftTags::ContainsMatchedForm(const XiftTags::Item & tag) const
+bool XiftTags::ContainsMatchedForm(const XiftTag & tag) const
 {
     Stack *current = stack;
     while (current) {

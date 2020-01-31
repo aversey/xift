@@ -5,6 +5,23 @@
 #include <string.h>
 
 
+XiftAttribute::XiftAttribute():
+    name(0), nlen(0), nsize(0), value(0), vlen(0), vsize(0)
+{}
+
+XiftAttribute::~XiftAttribute()
+{
+    if (name) free(name);
+    if (value) free(value);
+}
+
+
+bool XiftAttribute::MatchesForm(const XiftAttribute &form) const
+{
+    return !strcmp(name, form.name);
+}
+
+
 XiftAttributes::XiftAttributes(): stack(0)
 {}
 
@@ -18,7 +35,7 @@ XiftAttributes::~XiftAttributes()
 }
 
 
-XiftAttributes::Attr &XiftAttributes::Attribute(const char *name)
+XiftAttribute &XiftAttributes::Attribute(const char *name)
 {
     Stack *current = stack;
     while (current) {
@@ -27,7 +44,7 @@ XiftAttributes::Attr &XiftAttributes::Attribute(const char *name)
         }
         current = current->next;
     }
-    Attr &res = New();
+    XiftAttribute &res = New();
     res.nlen  = strlen(name);
     res.name  = xift_str_create_copy(name, name + res.nlen);
     res.nsize = res.nlen + 1;
@@ -49,24 +66,7 @@ void XiftAttributes::Remove(const char *name)
 }
 
 
-XiftAttributes::Attr::Attr():
-    name(0), nlen(0), nsize(0), value(0), vlen(0), vsize(0)
-{}
-
-XiftAttributes::Attr::~Attr()
-{
-    if (name) free(name);
-    if (value) free(value);
-}
-
-
-bool XiftAttributes::Attr::MatchesForm(const XiftAttributes::Attr &form) const
-{
-    return !strcmp(name, form.name);
-}
-
-
-XiftAttributes::Attr *XiftAttributes::Top()
+XiftAttribute *XiftAttributes::Top()
 {
     if (stack) {
         return &stack->item;
@@ -84,7 +84,7 @@ void XiftAttributes::Pop()
     }
 }
 
-XiftAttributes::Attr &XiftAttributes::New()
+XiftAttribute &XiftAttributes::New()
 {
     Stack *old  = stack;
     stack       = new Stack;
@@ -92,9 +92,7 @@ XiftAttributes::Attr &XiftAttributes::New()
     return stack->item;
 }
 
-bool XiftAttributes::ContainsMatchedForm(
-    const XiftAttributes::Attr &attribute
-) const
+bool XiftAttributes::ContainsMatchedForm(const XiftAttribute &attribute) const
 {
     Stack *current = stack;
     while (current) {

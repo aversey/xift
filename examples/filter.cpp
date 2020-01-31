@@ -8,7 +8,7 @@ int main()
     Xift     xift(exporter);
 
     xift.Tag("a").Attribute("href");
-    XiftTags::Tag &p = xift.Tag("p");
+    XiftTag &p = xift.Tag("p");
     p.Attribute("class");
     p.Attribute("hidden");
     p.Attribute("id");
@@ -21,7 +21,8 @@ int main()
 
     if (!xift.End()) {
         printf("Error on %d line, %d column:\n%s",
-               xift.ErrorLine(), xift.ErrorColumn(), xift.Error());
+               xift.ErrorLine(), xift.ErrorColumn(),
+               xift_error_message(xift.GetError()));
     }
 
     return 0;
